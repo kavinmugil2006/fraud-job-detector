@@ -1,0 +1,11 @@
+pandas
+numpy
+scikit-learn
+nltk
+joblib
+streamlit
+transformers
+torch
+sentencepiece
+flask
+gunicorn
