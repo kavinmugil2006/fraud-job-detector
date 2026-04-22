@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Job Detector</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .header .badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 12px;
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #60a5fa;
+        }
+        
+        .input-section {
+            background: #12121a;
+            border: 1px solid #1e1e2e;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .input-section label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #aaa;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: #0a0a0f;
+            border: 1px solid #2a2a3a;
+            border-radius: 12px;
+            padding: 16px;
+            color: #e0e0e0;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            resize: vertical;
+            transition: border-color 0.3s;
+            line-height: 1.5;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        textarea::placeholder {
+            color: #555;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6, #7c3aed);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: opacity 0.3s, transform 0.1s;
+        }
+        
+        .btn:hover { opacity: 0.9; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .result-section {
+            background: #12121a;
+            border: 1px solid #1e1e2e;
+            border-radius: 16px;
+            padding: 24px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .verdict {
+            text-align: center;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .verdict.safe {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .verdict.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .verdict.warning {
+            background: rgba(250, 204, 21, 0.1);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+        }
+        
+        .verdict h2 {
+            font-size: 1.8rem;
+            margin-bottom: 6px;
+        }
+        
+        .verdict.safe h2 { color: #22c55e; }
+        .verdict.danger h2 { color: #ef4444; }
+        .verdict.warning h2 { color: #facc15; }
+        
+        .verdict p { color: #888; font-size: 0.95rem; }
+        
+        .prob-bar {
+            margin: 20px 0;
+            background: #1e1e2e;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 36px;
+            position: relative;
+        }
+        
+        .prob-fill {
+            height: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: width 1s ease;
+            min-width: 80px;
+        }
+        
+        .prob-fill.fraud { background: linear-gradient(90deg, #dc2626, #ef4444); }
+        .prob-fill.legit { background: linear-gradient(90deg, #16a34a, #22c55e); }
+        
+        .prob-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #555;
+            margin-top: 6px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .stat-card {
+            background: #0a0a0f;
+            border: 1px solid #1e1e2e;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+        
+        .red-flags {
+            margin-top: 20px;
+        }
+        
+        .red-flags h3 {
+            font-size: 1rem;
+            color: #ef4444;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .red-flags h3 span {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .flag {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.12);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #fca5a5;
+        }
+
+        .flag-icon {
+            width: 20px;
+            height: 20px;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+        
+        .no-flags {
+            color: #22c55e;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(34, 197, 94, 0.06);
+            border: 1px solid rgba(34, 197, 94, 0.12);
+            border-radius: 8px;
+        }
+        
+        .samples {
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .sample-btn {
+            padding: 6px 14px;
+            background: #1e1e2e;
+            border: 1px solid #2a2a3a;
+            border-radius: 8px;
+            color: #888;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .sample-btn:hover {
+            border-color: #60a5fa;
+            color: #60a5fa;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #444;
+            font-size: 0.8rem;
+        }
+
+        .footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Fraud Job Detector</h1>
+            <p>Paste a job description to check if it's legitimate or fraudulent</p>
+            <div class="badge">Trained on EMSCAD benchmark | SVM + TF-IDF | F1 = 0.913</div>
+        </div>
+        
+        <div class="input-section">
+            <label>Job Description</label>
+            <textarea id="jobText" placeholder="Paste the full job posting here — include title, description, requirements, company info, compensation details..."></textarea>
+            
+            <div class="samples">
+                <span style="color:#555; font-size:0.8rem;">Try:</span>
+                <button class="sample-btn" onclick="loadSample('fraud1')">Obvious Fraud</button>
+                <button class="sample-btn" onclick="loadSample('fraud2')">Sneaky Fraud</button>
+                <button class="sample-btn" onclick="loadSample('legit')">Legit Job</button>
+            </div>
+            
+            <button class="btn" id="analyzeBtn" onclick="analyze()">Analyze Job Posting</button>
+        </div>
+        
+        <div class="result-section" id="results">
+            <div class="verdict" id="verdict">
+                <h2 id="verdictText"></h2>
+                <p id="verdictSub"></p>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-value" id="fraudPct" style="color:#ef4444">0%</div>
+                    <div class="stat-label">Fraud probability</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="legitPct" style="color:#22c55e">0%</div>
+                    <div class="stat-label">Legit probability</div>
+                </div>
+            </div>
+            
+            <div class="prob-bar">
+                <div class="prob-fill" id="probFill"></div>
+            </div>
+            <div class="prob-labels">
+                <span>Legitimate</span>
+                <span>Fraudulent</span>
+            </div>
+            
+            <div class="red-flags" id="redFlags"></div>
+        </div>
+
+        <div class="footer">
+            <p>Built with Scikit-learn, Flask, and the EMSCAD dataset</p>
+            <p>By Kavinmugil A & Prasanna K | St. Joseph's College of Engineering, Chennai</p>
+        </div>
+    </div>
+
+    <script>
+        const samples = {
+            fraud1: `WORK FROM HOME - Earn $5000/week!
+
+Be your own boss! No experience needed. We are looking for motivated individuals to join our team of remote workers.
+
+Simply complete simple online tasks from your computer and earn up to $5000 per week! Our top earners make over $8000/month working just 2-3 hours per day.
+
+Requirements:
+- Must have a computer and internet
+- No experience required
+- Must pay one-time registration fee of $199 to access our platform
+- Must be 18 or older
+
+Contact us on WhatsApp: +1-555-0123 or Telegram @quickjobs
+
+Start earning TODAY!!! Don't miss this opportunity for financial freedom!!!`,
+
+            fraud2: `Senior Data Analyst - Revenue Operations
+
+Nexova Analytics Group | Austin, TX (Hybrid - 2 days onsite)
+
+About Nexova:
+Nexova Analytics Group is a Series B funded data consultancy serving mid-market SaaS companies across North America. Founded in 2019, we have grown to a team of 85 professionals across three offices.
+
+Role Overview:
+We are hiring a Senior Data Analyst to join our Revenue Operations team. You will report directly to our VP of RevOps and work cross-functionally with Sales, Marketing, and Customer Success.
+
+Requirements:
+- Bachelor's degree in Statistics, Mathematics, or quantitative field
+- 4-7 years of experience in analytics or revenue operations
+- Advanced SQL and Python proficiency
+- Working knowledge of Salesforce reporting
+
+Compensation:
+- Base salary: $115,000 - $140,000 DOE
+- Performance bonus: up to 15% annually
+
+Application Process:
+Please submit a refundable background verification fee of $35 to our secure onboarding portal to expedite the hiring process. This fee is returned in full with your first paycheck. Apply directly to nexova.careers.recruiting@gmail.com for expedited review.`,
+
+            legit: `Senior Software Engineer - Backend
+
+Company: TechCorp Solutions (San Francisco, CA)
+
+We are seeking an experienced Backend Software Engineer to join our growing engineering team. You will design and build scalable microservices that power our core platform serving 2M+ daily active users.
+
+Key Responsibilities:
+- Design, develop, and maintain RESTful APIs and microservices using Python and Go
+- Collaborate with frontend engineers, product managers, and designers
+- Participate in code reviews, architecture discussions, and sprint planning
+- Optimize application performance and ensure 99.9% uptime SLA
+- Mentor junior engineers and contribute to engineering best practices
+
+Requirements:
+- Bachelor's degree in Computer Science or related field
+- 5+ years of professional software development experience
+- Strong proficiency in Python, Go, or Java
+- Experience with PostgreSQL, Redis, and message queues (RabbitMQ/Kafka)
+- Familiarity with Docker, Kubernetes, and CI/CD pipelines
+- Excellent problem-solving and communication skills
+
+Benefits:
+- Competitive salary: $150,000 - $190,000 based on experience
+- Equity package, 401(k) with 4% match
+- Health, dental, and vision insurance
+- Unlimited PTO, flexible work arrangements
+- $2,000 annual learning budget`
+        };
+
+        function loadSample(type) {
+            document.getElementById('jobText').value = samples[type];
+        }
+
+        async function analyze() {
+            const text = document.getElementById('jobText').value.trim();
+            if (!text) { alert('Please enter a job description'); return; }
+            
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.textContent = 'Analyzing...';
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                const data = await response.json();
+                if (data.error) { alert('Error: ' + data.error); return; }
+                showResults(data);
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Analyze Job Posting';
+            }
+        }
+
+        function showResults(data) {
+            const results = document.getElementById('results');
+            const verdict = document.getElementById('verdict');
+            const verdictText = document.getElementById('verdictText');
+            const verdictSub = document.getElementById('verdictSub');
+            const probFill = document.getElementById('probFill');
+            const redFlagsDiv = document.getElementById('redFlags');
+            
+            results.style.display = 'block';
+            
+            if (data.risk_level === 'HIGH') {
+                verdict.className = 'verdict danger';
+                verdictText.textContent = 'FRAUDULENT';
+                verdictSub.textContent = data.fraud_probability + '% chance this is a scam';
+            } else if (data.risk_level === 'MEDIUM') {
+                verdict.className = 'verdict warning';
+                verdictText.textContent = 'SUSPICIOUS';
+                verdictSub.textContent = data.fraud_probability + '% fraud probability — proceed with caution';
+            } else {
+                verdict.className = 'verdict safe';
+                verdictText.textContent = 'LEGITIMATE';
+                verdictSub.textContent = data.legit_probability + '% chance this is a real job';
+            }
+
+            document.getElementById('fraudPct').textContent = data.fraud_probability + '%';
+            document.getElementById('legitPct').textContent = data.legit_probability + '%';
+            
+            if (data.fraud_probability > 50) {
+                probFill.style.width = data.fraud_probability + '%';
+                probFill.className = 'prob-fill fraud';
+                probFill.textContent = data.fraud_probability + '% Fraud';
+            } else {
+                probFill.style.width = data.legit_probability + '%';
+                probFill.className = 'prob-fill legit';
+                probFill.textContent = data.legit_probability + '% Legit';
+            }
+            
+            if (data.red_flags && data.red_flags.length > 0) {
+                redFlagsDiv.innerHTML = '<h3>Red flags detected <span>' + data.red_flags.length + ' found</span></h3>' +
+                    data.red_flags.map(f => '<div class="flag"><div class="flag-icon">!</div>' + f + '</div>').join('');
+            } else {
+                redFlagsDiv.innerHTML = '<div class="no-flags">No red flags detected</div>';
+            }
+            
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
