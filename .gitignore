@@ -1,0 +1,27 @@
+# Virtual environment
+venv/
+.venv/
+
+# Dataset (too large, download from Kaggle)
+*.csv
+
+# Saved models (too large, regenerate by running notebook)
+saved_models/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
